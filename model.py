@@ -61,11 +61,14 @@ print('y shape is {}'.format(y.shape))
 input_shape = X.shape[1:]
 model = Sequential([
     Lambda(lambda x: x / 255.0 - 0.5, input_shape=input_shape),
+    Convolution2D(32, 5, 5, activation='relu'),
+    MaxPooling2D(),
     Flatten(),
+    Dense(32, activation='relu'),
     Dense(1)
 ])
 model.compile(loss='mse', optimizer='adam')
-model.fit(X, y, validation_split=0.2, shuffle=True, nb_epoch=5)
+model.fit(X, y, validation_split=0.2, shuffle=True, nb_epoch=2)
 model.save('model.h5')
 
 # try to avoid 'NoneType' object has no attribute 'TF_DeleteStatus' error
