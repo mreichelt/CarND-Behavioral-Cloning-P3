@@ -8,7 +8,7 @@ import numpy as np
 
 import keras.backend
 from keras.models import Sequential
-from keras.layers import Flatten, Dense, Conv2D, Dropout, Activation
+from keras.layers import Flatten, Dense, Dropout, Activation, Lambda, Convolution2D, MaxPooling2D
 
 
 def loadcsv(file):
@@ -50,20 +50,22 @@ def load_all_driving_data(root='driving_data'):
 
 
 t = time.process_time()
-X_train, y_train = load_all_driving_data()
+X, y = load_all_driving_data()
 t = time.process_time() - t
 print('data loaded in {:.2f}s'.format(t))
-print('X shape is {}'.format(X_train.shape))
-print('y shape is {}'.format(y_train.shape))
+print('X shape is {}'.format(X.shape))
+print('y shape is {}'.format(y.shape))
 
 # Now let's train!
 
+input_shape = X.shape[1:]
 model = Sequential([
-    Flatten(input_shape=X_train.shape[1:]),
+    Lambda(lambda x: x / 255.0 - 0.5, input_shape=input_shape),
+    Flatten(),
     Dense(1)
 ])
 model.compile(loss='mse', optimizer='adam')
-model.fit(X_train, y_train, validation_split=0.2, shuffle=True)
+model.fit(X, y, validation_split=0.2, shuffle=True, nb_epoch=5)
 model.save('model.h5')
 
 # try to avoid 'NoneType' object has no attribute 'TF_DeleteStatus' error
