@@ -6,6 +6,7 @@ import time
 
 import numpy as np
 
+import keras.backend
 from keras.models import Sequential
 from keras.layers import Flatten, Dense, Conv2D, Dropout, Activation
 
@@ -49,8 +50,21 @@ def load_all_driving_data(root='driving_data'):
 
 
 t = time.process_time()
-X, y = load_all_driving_data()
+X_train, y_train = load_all_driving_data()
 t = time.process_time() - t
 print('data loaded in {:.2f}s'.format(t))
-print('X shape is {}'.format(X.shape))
-print('y shape is {}'.format(y.shape))
+print('X shape is {}'.format(X_train.shape))
+print('y shape is {}'.format(y_train.shape))
+
+# Now let's train!
+
+model = Sequential([
+    Flatten(input_shape=X_train.shape[1:]),
+    Dense(1)
+])
+model.compile(loss='mse', optimizer='adam')
+model.fit(X_train, y_train, validation_split=0.2, shuffle=True)
+model.save('model.h5')
+
+# try to avoid 'NoneType' object has no attribute 'TF_DeleteStatus' error
+keras.backend.clear_session()
