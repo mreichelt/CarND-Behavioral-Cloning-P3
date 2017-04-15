@@ -86,13 +86,17 @@ input_shape = X_train.shape[1:]
 model = Sequential([
     Lambda(lambda x: x / 255.0 - 0.5, input_shape=input_shape),
     Cropping2D(cropping=((70, 25), (0, 0))),
-    Convolution2D(24, 5, 5, activation='relu', subsample=(2, 2)),
-    Convolution2D(36, 5, 5, activation='relu', subsample=(2, 2)),
-    Convolution2D(48, 5, 5, activation='relu', subsample=(2, 2)),
-    Convolution2D(64, 5, 5, activation='relu'),
+    Convolution2D(24, 3, 3, activation='relu', subsample=(2, 2)),
+    Convolution2D(36, 3, 3, activation='relu', subsample=(2, 2)),
+    Convolution2D(48, 3, 3, activation='relu', subsample=(2, 2)),
+    Convolution2D(64, 3, 3, activation='relu'),
+    Convolution2D(64, 3, 3, activation='relu'),
     Flatten(),
+    Dropout(0.5),
     Dense(100),
+    Dropout(0.5),
     Dense(50),
+    Dropout(0.5),
     Dense(10),
     Dense(1)
 ])
