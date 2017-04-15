@@ -1,15 +1,14 @@
 import csv
-import cv2
 import os
 import sys
 import time
 
-import numpy as np
-
+import cv2
 import keras.backend
-from keras.models import Sequential, Model
-from keras.layers import Flatten, Dense, Dropout, Activation, Lambda, Convolution2D, MaxPooling2D
 import matplotlib
+import numpy as np
+from keras.layers import Flatten, Dense, Dropout, Lambda, Convolution2D, MaxPooling2D
+from keras.models import Sequential
 
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -30,15 +29,19 @@ def load_single_data_folder(dir):
     X, y = [], []
     csvlines = loadcsv(os.path.join(dir, 'driving_log.csv'))
     for csvline in csvlines:
-        # TODO: load images 2 and 3, too!
-        center = 0
-        left = 1
-        right = 2
-        image = cv2.imread(os.path.join(dir, 'IMG/' + csvline[center].split('/')[-1]))
-        if image is None:
+        image_center = cv2.imread(os.path.join(dir, 'IMG/' + csvline[0].split('/')[-1]))
+        image_left = cv2.imread(os.path.join(dir, 'IMG/' + csvline[1].split('/')[-1]))
+        image_right = cv2.imread(os.path.join(dir, 'IMG/' + csvline[2].split('/')[-1]))
+        if image_center is None or image_left is None or image_right is None:
             sys.exit("image is None")
-        X.append(image)
-        y.append(float(csvline[3]))
+
+        correction = 0.2
+        steering_center = float(csvline[3])
+        steering_left = steering_center + correction
+        steering_right = steering_center - correction
+
+        X.extend((image_center, image_left, image_right))
+        y.extend((steering_center, steering_left, steering_right))
 
     return np.array(X), np.array(y)
 
@@ -94,7 +97,7 @@ model = Sequential([
     Dense(1, init='he_normal')
 ])
 model.compile(loss='mse', optimizer='adam')
-history = model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=4)
+history = model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=2)
 model.save('model.h5')
 
 # show history plot
