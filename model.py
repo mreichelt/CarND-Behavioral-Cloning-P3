@@ -10,6 +10,7 @@ import keras.backend
 from keras.models import Sequential, Model
 from keras.layers import Flatten, Dense, Dropout, Activation, Lambda, Convolution2D, MaxPooling2D
 import matplotlib
+
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
@@ -81,19 +82,22 @@ y_train = np.concatenate((y_train, y_flip))
 input_shape = X_train.shape[1:]
 model = Sequential([
     Lambda(lambda x: x / 255.0 - 0.5, input_shape=input_shape),
-    Convolution2D(16, 5, 5, activation='relu'),
+    Convolution2D(12, 5, 5, activation='relu', init='he_normal'),
+    MaxPooling2D(),
+    Convolution2D(25, 5, 5, activation='relu', init='he_normal'),
     MaxPooling2D(),
     Flatten(),
-    Dense(32, activation='relu'),
-    Dense(1)
+    Dense(180, activation='relu', init='he_normal'),
+    Dropout(0.5),
+    Dense(100, activation='relu', init='he_normal'),
+    Dropout(0.5),
+    Dense(1, init='he_normal')
 ])
 model.compile(loss='mse', optimizer='adam')
-history = model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=1)
+history = model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=4)
 model.save('model.h5')
 
 # show history plot
-print(history.history.keys())
-### plot the training and validation loss for each epoch
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
 plt.title('model mean squared error loss')
