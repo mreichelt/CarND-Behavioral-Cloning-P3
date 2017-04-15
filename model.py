@@ -7,7 +7,7 @@ import cv2
 import keras.backend
 import matplotlib
 import numpy as np
-from keras.layers import Flatten, Dense, Dropout, Lambda, Convolution2D, MaxPooling2D
+from keras.layers import Flatten, Dense, Dropout, Lambda, Convolution2D, MaxPooling2D, Cropping2D
 from keras.models import Sequential
 
 matplotlib.use('agg')
@@ -85,19 +85,19 @@ y_train = np.concatenate((y_train, y_flip))
 input_shape = X_train.shape[1:]
 model = Sequential([
     Lambda(lambda x: x / 255.0 - 0.5, input_shape=input_shape),
-    Convolution2D(12, 5, 5, activation='relu', init='he_normal'),
-    MaxPooling2D(),
-    Convolution2D(25, 5, 5, activation='relu', init='he_normal'),
-    MaxPooling2D(),
+    Cropping2D(cropping=((70, 25), (0, 0))),
+    Convolution2D(24, 5, 5, activation='relu', subsample=(2, 2)),
+    Convolution2D(36, 5, 5, activation='relu', subsample=(2, 2)),
+    Convolution2D(48, 5, 5, activation='relu', subsample=(2, 2)),
+    Convolution2D(64, 5, 5, activation='relu'),
     Flatten(),
-    Dense(180, activation='relu', init='he_normal'),
-    Dropout(0.5),
-    Dense(100, activation='relu', init='he_normal'),
-    Dropout(0.5),
-    Dense(1, init='he_normal')
+    Dense(100),
+    Dense(50),
+    Dense(10),
+    Dense(1)
 ])
 model.compile(loss='mse', optimizer='adam')
-history = model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=2)
+history = model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=1)
 model.save('model.h5')
 
 # show history plot
