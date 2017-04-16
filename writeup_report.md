@@ -239,13 +239,15 @@ While the complete driving data of track 1 would fit into the RAM of my target m
 use generators to be able to process the data of both tracks.
 I split my data set into a training set of 80% and a validation set of 20%. The optimal number of epochs for my final model was 2.
 
-By plotting the losses I could ensure that the validation loss would increase after the second epoch. Here is my final
-plot (not showing the validation loss increase because it ended after epoch 2):
+Although the validation loss decreased continuously when training for 5 epochs, I observed that model to
+perform worse in the simulator than a model that trained for 2 epochs. Because of this I decided to stop training after
+2 epochs. One explanation could be that the validation data was too similar to the training data, leading to an overfitting
+of the model and worse performance on previously unseen examples (like real driving in the simulator).
 
-![train and validation loss](history.png)
+![train and validation loss for 5 epochs](history_5epochs.png)
 
 Right now, my model works well on track 1, but operates poorly on track 2. This can probably be improved by adding
 one or more laps of recovery driving on track 2. You can see the final video of track 1 [here](video.mp4).
 
-Currently you can download my [driving data for track 1](https://drive.google.com/open?id=0B1BT_B4FwQK3V2ZHTHBTeXZaSWs).
+You can download my [driving data for track 1](https://drive.google.com/open?id=0B1BT_B4FwQK3V2ZHTHBTeXZaSWs).
 I am looking forward to publish the driving data of track 2 as well as soon as my model performs well on both tracks.
