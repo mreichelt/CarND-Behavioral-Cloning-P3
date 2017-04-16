@@ -240,3 +240,6 @@ I split my data set into a training set of 80% and a validation set of 20%. The 
 
 Right now, my model works well on track 1, but operates poorly on track 2. This can probably be improved by adding
 one or more laps of recovery driving on track 2. You can see the final video of track 1 [here](video.mp4).
+
+Currently you can download my [driving data for track 1](https://drive.google.com/open?id=0B1BT_B4FwQK3V2ZHTHBTeXZaSWs).
+I am looking forward to publish the driving data of track 2 as well as soon as my model performs well on both tracks.
