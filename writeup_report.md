@@ -231,13 +231,18 @@ complete track 1 autonomously only used the data from track 1. Here you can see 
 ![outer side of curves](writeup/outer.jpg)
 
 To augment the data set, I also flipped images and negated the angle of the flipped image, hoping that my model
-would not learn to only drive into one direction.
+would not learn to only drive in just one direction.
 
-After the collection process, I had 166794 number of data points (83397 originals, but twice as much due to flipping).
+After the collection process I had 166794 number of data points (83397 originals, but twice as much due to flipping).
 
 While the complete driving data of track 1 would fit into the RAM of my target machine, I had to refactor the code to
 use generators to be able to process the data of both tracks.
 I split my data set into a training set of 80% and a validation set of 20%. The optimal number of epochs for my final model was 2.
+
+By plotting the losses I could ensure that the validation loss would increase after the second epoch. Here is my final
+plot (not showing the validation loss increase because it ended after epoch 2):
+
+![train and validation loss](history.png)
 
 Right now, my model works well on track 1, but operates poorly on track 2. This can probably be improved by adding
 one or more laps of recovery driving on track 2. You can see the final video of track 1 [here](video.mp4).
