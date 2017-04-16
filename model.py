@@ -1,15 +1,14 @@
 import csv
 import os
 import sys
-import time
 
 import cv2
 import keras.backend
 import matplotlib
 import numpy as np
-from keras.layers import Flatten, Dense, Dropout, Lambda, Convolution2D, MaxPooling2D, Cropping2D
-from keras.models import Sequential
 import sklearn.utils
+from keras.layers import Flatten, Dense, Dropout, Lambda, Convolution2D, Cropping2D
+from keras.models import Sequential
 from sklearn.model_selection import train_test_split
 
 matplotlib.use('agg')
