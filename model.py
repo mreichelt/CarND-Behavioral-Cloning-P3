@@ -9,6 +9,8 @@ import matplotlib
 import numpy as np
 from keras.layers import Flatten, Dense, Dropout, Lambda, Convolution2D, MaxPooling2D, Cropping2D
 from keras.models import Sequential
+import sklearn.utils
+from sklearn.model_selection import train_test_split
 
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -24,67 +26,76 @@ def loadcsv(file):
     return lines
 
 
-def load_single_data_folder(dir):
-    """Loads a driving data folder"""
-    X, y = [], []
+def load_single_data_folder(dir, steer_correction=0.2):
+    """Adjusts image paths + get steering angles"""
+    samples = []
     csvlines = loadcsv(os.path.join(dir, 'driving_log.csv'))
     for csvline in csvlines:
-        image_center = cv2.imread(os.path.join(dir, 'IMG/' + csvline[0].split('/')[-1]))
-        image_left = cv2.imread(os.path.join(dir, 'IMG/' + csvline[1].split('/')[-1]))
-        image_right = cv2.imread(os.path.join(dir, 'IMG/' + csvline[2].split('/')[-1]))
-        if image_center is None or image_left is None or image_right is None:
-            sys.exit("image is None")
+        image_center = os.path.join(dir, 'IMG/' + csvline[0].split('/')[-1])
+        image_left = os.path.join(dir, 'IMG/' + csvline[1].split('/')[-1])
+        image_right = os.path.join(dir, 'IMG/' + csvline[2].split('/')[-1])
 
-        correction = 0.2
         steering_center = float(csvline[3])
-        steering_left = steering_center + correction
-        steering_right = steering_center - correction
+        samples.append([image_center, steering_center])
+        samples.append([image_left, (steering_center + steer_correction)])
+        samples.append([image_right, (steering_center - steer_correction)])
 
-        X.extend((image_center, image_left, image_right))
-        y.extend((steering_center, steering_left, steering_right))
-
-    return np.array(X), np.array(y)
+    return samples
 
 
-def load_all_driving_data(root='driving_data'):
-    """Loads all driving data"""
-    X_all, y_all = [], []
+def load_all_samples(root='driving_data'):
+    """Loads all driving samples"""
+    samples = []
     for dir in os.listdir(root):
         dir = os.path.join(root, dir)
         if os.path.isdir(dir):
             print('loading {}'.format(dir))
-            X, y = load_single_data_folder(dir)
-            X_all.extend(X)
-            y_all.extend(y)
-    return np.array(X_all), np.array(y_all)
+            samples.extend(load_single_data_folder(dir))
+
+    return samples
 
 
-def flip_images(X, y):
-    """Flips the images + steering angle, returns new arrays"""
-    X = np.copy(X)
-    y = np.copy(y) * -1.0
-    for i, x in enumerate(X):
-        X[i] = np.fliplr(x)
-    return X, y
+def generator(samples, batch_size=32, add_flipped=True):
+    num_samples = len(samples)
+    while 1:  # Loop forever so the generator never terminates
+        sklearn.utils.shuffle(samples)
+        for offset in range(0, num_samples, batch_size):
+            batch_samples = samples[offset:offset + batch_size]
 
+            images = []
+            angles = []
+            for batch_sample in batch_samples:
+                image = cv2.imread(batch_sample[0])
+                angle = batch_sample[1]
+                if image is None:
+                    sys.exit("image is None")
+                images.append(image)
+                angles.append(angle)
+
+                if add_flipped:
+                    # Augment the data: add flipped image + angle
+                    images.append(np.fliplr(image))
+                    angles.append(-angle)
+
+            X_train = np.array(images)
+            y_train = np.array(angles)
+            yield sklearn.utils.shuffle(X_train, y_train)
+
+
+# split samples into train/validation samples (no images loaded yet)
+samples = load_all_samples()
+train_samples, validation_samples = train_test_split(samples, test_size=0.2)
 
 # Print some stuff about the data
-t = time.process_time()
-X_train, y_train = load_all_driving_data()
-t = time.process_time() - t
-print('data loaded in {:.2f}s'.format(t))
-print('X_train shape is {}'.format(X_train.shape))
-print('y_train shape is {}'.format(y_train.shape))
-
-# Augment the data
-X_flip, y_flip = flip_images(X_train, y_train)
-X_train = np.concatenate((X_train, X_flip))
-y_train = np.concatenate((y_train, y_flip))
+image_shape = cv2.imread(train_samples[0][0]).shape
+print('input: {} training and {} validation samples'.format(len(train_samples), len(validation_samples)))
+print('image shape: {}'.format(image_shape))
 
 # Now let's train!
-input_shape = X_train.shape[1:]
+train_generator = generator(train_samples, batch_size=32)
+validation_generator = generator(validation_samples, batch_size=32)
 model = Sequential([
-    Lambda(lambda x: x / 255.0 - 0.5, input_shape=input_shape),
+    Lambda(lambda x: x / 255.0 - 0.5, input_shape=image_shape),
     Cropping2D(cropping=((70, 25), (0, 0))),
     Convolution2D(24, 3, 3, activation='relu', subsample=(2, 2)),
     Convolution2D(36, 3, 3, activation='relu', subsample=(2, 2)),
@@ -101,7 +112,13 @@ model = Sequential([
     Dense(1)
 ])
 model.compile(loss='mse', optimizer='adam')
-history = model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=1)
+history = model.fit_generator(
+    train_generator,
+    samples_per_epoch=len(train_samples),
+    validation_data=validation_generator,
+    nb_val_samples=len(validation_samples),
+    nb_epoch=3
+)
 model.save('model.h5')
 
 # show history plot
