@@ -92,8 +92,8 @@ print('input: {} training and {} validation samples'.format(len(train_samples), 
 print('image shape: {}'.format(image_shape))
 
 # Now let's train!
-train_generator = generator(train_samples, batch_size=32)
-validation_generator = generator(validation_samples, batch_size=32)
+train_generator = generator(train_samples, batch_size=128)
+validation_generator = generator(validation_samples, batch_size=128)
 model = Sequential([
     Lambda(lambda x: x / 255.0 - 0.5, input_shape=image_shape),
     Cropping2D(cropping=((70, 25), (0, 0))),
@@ -114,10 +114,10 @@ model = Sequential([
 model.compile(loss='mse', optimizer='adam')
 history = model.fit_generator(
     train_generator,
-    samples_per_epoch=len(train_samples),
+    samples_per_epoch=len(train_samples) * 2,  # normal + flipped images
     validation_data=validation_generator,
-    nb_val_samples=len(validation_samples),
-    nb_epoch=3
+    nb_val_samples=len(validation_samples) * 2,  # normal + flipped images
+    nb_epoch=2
 )
 model.save('model.h5')
 
