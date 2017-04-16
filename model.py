@@ -90,17 +90,28 @@ image_shape = cv2.imread(train_samples[0][0]).shape
 print('input: {} training and {} validation samples'.format(len(train_samples), len(validation_samples)))
 print('image shape: {}'.format(image_shape))
 
-# Now let's train!
 train_generator = generator(train_samples, batch_size=128)
 validation_generator = generator(validation_samples, batch_size=128)
+
+# CNN based on the NVIDIA CNN from https://arxiv.org/pdf/1604.07316v1.pdf
+#   modifications:
+#     - reduced the filter size of the convolutions to be able to handle cropped image sizes
+#     - added 3 dropout layers to reduce overfitting
 model = Sequential([
+    # normalize the data
     Lambda(lambda x: x / 255.0 - 0.5, input_shape=image_shape),
+
+    # remove top / bottom part of the image, they contain data that is mostly not useful
     Cropping2D(cropping=((70, 25), (0, 0))),
+
+    # convolutional layers + pooling
     Convolution2D(24, 3, 3, activation='relu', subsample=(2, 2)),
     Convolution2D(36, 3, 3, activation='relu', subsample=(2, 2)),
     Convolution2D(48, 3, 3, activation='relu', subsample=(2, 2)),
     Convolution2D(64, 3, 3, activation='relu'),
     Convolution2D(64, 3, 3, activation='relu'),
+
+    # some fully connected layers, added dropout to reduce overfitting
     Flatten(),
     Dropout(0.5),
     Dense(100),
@@ -110,7 +121,11 @@ model = Sequential([
     Dense(10),
     Dense(1)
 ])
+
+# use adam optimizer that changes the learning rate automatically, use MSE for loss
 model.compile(loss='mse', optimizer='adam')
+
+# now let's really train our model! :-)
 history = model.fit_generator(
     train_generator,
     samples_per_epoch=len(train_samples) * 2,  # normal + flipped images
@@ -118,9 +133,11 @@ history = model.fit_generator(
     nb_val_samples=len(validation_samples) * 2,  # normal + flipped images
     nb_epoch=2
 )
+
+# save it to a file that we can use later
 model.save('model.h5')
 
-# show history plot
+# save history plot to history.png
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
 plt.title('model mean squared error loss')
